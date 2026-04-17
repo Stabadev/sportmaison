@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Sport Maison</title>
+
+<!-- ===== PWA : manifest inline (data URL) ===== -->
+<link rel="manifest" href='data:application/manifest+json,{"name":"Sport Maison","short_name":"Sport","start_url":".","display":"standalone","orientation":"portrait","background_color":"%230a0a0a","theme_color":"%230a0a0a","icons":[{"src":"data:image/svg%2Bxml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 rx=%22110%22 fill=%22%230a0a0a%22/><text x=%2250%25%22 y=%2254%25%22 font-size=%22300%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>💪</text></svg>","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}'>
+
+<!-- Icône directe (pour favicon + secours Android) -->
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="%230a0a0a"/><text x="50%25" y="54%25" font-size="300" text-anchor="middle" dominant-baseline="middle">💪</text></svg>'>
+<style>
+  /* ---------- RESET ---------- */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: #0a0a0a;
+    color: #f5f5f5;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ---------- ECRANS ---------- */
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    padding: max(env(safe-area-inset-top), 20px) 20px max(env(safe-area-inset-bottom), 20px) 20px;
+  }
+  .screen.active { display: flex; }
+
+  /* ---------- ACCUEIL ---------- */
+  #home {
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+  }
+  .home-header {
+    margin-top: 10vh;
+  }
+  .home-title {
+    font-size: clamp(48px, 12vw, 88px);
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 0.9;
+    text-transform: uppercase;
+  }
+  .home-subtitle {
+    margin-top: 16px;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #888;
+    text-transform: uppercase;
+  }
+  .home-summary {
+    margin: 40px 0;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #aaa;
+    letter-spacing: 1px;
+  }
+  .home-summary span {
+    color: #f5f5f5;
+    font-weight: 700;
+  }
+  .start-btn {
+    width: 100%;
+    max-width: 500px;
+    padding: 32px;
+    margin-bottom: 5vh;
+    background: #ff3b30;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    font-family: inherit;
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.2s ease;
+    box-shadow: 0 8px 32px rgba(255, 59, 48, 0.3);
+  }
+  .start-btn:active {
+    transform: scale(0.97);
+    background: #e02d23;
+  }
+
+  /* ---------- SEANCE ---------- */
+  #session {
+    justify-content: space-between;
+  }
+
+  .phase-label {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .round-info {
+    text-align: center;
+    font-size: 18px;
+    color: #888;
+    margin-top: 8px;
+    letter-spacing: 2px;
+  }
+
+  .exercise-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 0;
+  }
+
+  .exercise-name {
+    font-size: clamp(56px, 14vw, 120px);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -3px;
+    text-transform: uppercase;
+    color: #fff;
+    text-wrap: balance;
+    max-width: 100%;
+  }
+
+  .exercise-detail {
+    margin-top: 24px;
+    font-size: clamp(20px, 4.5vw, 32px);
+    color: #888;
+    letter-spacing: 1px;
+  }
+
+  .counter {
+    margin-top: 40px;
+    font-size: clamp(120px, 30vw, 240px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -4px;
+    color: #ff3b30;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+  .counter.warning { color: #ffcc00; }
+  .counter.rest { color: #30d158; }
+  .counter.pulse { transform: scale(1.08); }
+
+  .counter-label {
+    margin-top: 8px;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #666;
+    text-transform: uppercase;
+  }
+
+  /* ---------- REPS MODE (bouton "suivant") ---------- */
+  .reps-btn {
+    margin-top: 32px;
+    padding: 24px 48px;
+    background: #1c1c1e;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 16px;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .reps-btn:active { background: #2c2c2e; }
+
+  /* ---------- BAS: PROGRESSION + CONTROLES ---------- */
+  .bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #1c1c1e;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #f5f5f5;
+    width: 0%;
+    transition: width 0.4s ease;
+    border-radius: 3px;
+  }
+  .progress-text {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #666;
+    text-transform: uppercase;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+  }
+  .ctrl-btn {
+    flex: 1;
+    padding: 20px;
+    background: #1c1c1e;
+    color: #f5f5f5;
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .ctrl-btn:active { background: #2c2c2e; }
+  .ctrl-btn.primary { background: #ff3b30; color: #fff; }
+  .ctrl-btn.primary:active { background: #e02d23; }
+
+  /* ---------- PAUSE OVERLAY ---------- */
+  .pause-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.92);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .pause-overlay.active { display: flex; }
+  .pause-title {
+    font-size: clamp(64px, 16vw, 120px);
+    font-weight: 900;
+    letter-spacing: -2px;
+    text-transform: uppercase;
+    color: #ffcc00;
+  }
+  .pause-hint {
+    margin-top: 24px;
+    font-size: 16px;
+    letter-spacing: 3px;
+    color: #888;
+    text-transform: uppercase;
+  }
+
+  /* ---------- FIN ---------- */
+  #end {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .end-title {
+    font-size: clamp(64px, 16vw, 120px);
+    font-weight: 900;
+    letter-spacing: -3px;
+    text-transform: uppercase;
+    line-height: 0.9;
+    color: #30d158;
+  }
+  .end-subtitle {
+    margin-top: 24px;
+    font-size: 20px;
+    color: #888;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .end-btn {
+    margin-top: 48px;
+    padding: 24px 48px;
+    background: #1c1c1e;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 16px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .end-btn:active { background: #2c2c2e; }
+</style>
+</head>
+<body>
+
+  <!-- ============ ACCUEIL ============ -->
+  <div id="home" class="screen active">
+    <div class="home-header">
+      <div class="home-title">Sport<br>Maison</div>
+      <div class="home-subtitle">Séance guidée</div>
+    </div>
+    <div class="home-summary">
+      <span>Échauffement</span> — 2 tours<br>
+      <span>Circuit principal</span> — 3 tours<br>
+      <span>Étirements</span> — 5 min
+    </div>
+    <button class="start-btn" id="startBtn">Commencer</button>
+  </div>
+
+  <!-- ============ SEANCE ============ -->
+  <div id="session" class="screen">
+    <div>
+      <div class="phase-label" id="phaseLabel">Échauffement</div>
+      <div class="round-info" id="roundInfo">Tour 1 / 2</div>
+    </div>
+
+    <div class="exercise-area" id="exerciseArea">
+      <div class="exercise-name" id="exerciseName">Jumping Jacks</div>
+      <div class="exercise-detail" id="exerciseDetail">30 secondes</div>
+      <div class="counter" id="counter">30</div>
+      <div class="counter-label" id="counterLabel">Secondes</div>
+      <button class="reps-btn" id="repsBtn" style="display:none">Terminé ✓</button>
+    </div>
+
+    <div class="bottom">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">Étape 1 / 20</div>
+      <div class="controls">
+        <button class="ctrl-btn" id="pauseBtn">Pause</button>
+        <button class="ctrl-btn" id="skipBtn">Suivant ▸</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PAUSE ============ -->
+  <div class="pause-overlay" id="pauseOverlay">
+    <div class="pause-title">Pause</div>
+    <div class="pause-hint">Touche l'écran pour reprendre</div>
+  </div>
+
+  <!-- ============ FIN ============ -->
+  <div id="end" class="screen">
+    <div class="end-title">Bravo !<br>Séance<br>terminée</div>
+    <div class="end-subtitle">Beau boulot 💪</div>
+    <button class="end-btn" id="restartBtn">Recommencer</button>
+  </div>
+
+<script>
+/* ======================================================================
+   DONNEES — LA SEANCE
+   ====================================================================== */
+
+const WARMUP_EXERCISES = [
+  { name: 'Jumping Jacks',            detail: '30 secondes',       mode: 'time', duration: 30 },
+  { name: 'Montées de genoux',        detail: '30 secondes',       mode: 'time', duration: 30 },
+  { name: 'Rotations de bras',        detail: '10 répétitions',    mode: 'reps' },
+  { name: 'Squats lents',             detail: '10 répétitions',    mode: 'reps' },
+];
+
+const CIRCUIT_EXERCISES = [
+  { name: 'Squats',                   detail: '10 à 15 reps',      mode: 'reps' },
+  { name: 'Pompes',                   detail: '5 à 10 reps',       mode: 'reps' },
+  { name: 'Gainage',                  detail: '30 secondes',       mode: 'time', duration: 30 },
+  { name: 'Fentes',                   detail: '8 reps / jambe',    mode: 'reps' },
+];
+
+const WARMUP_ROUNDS = 2;
+const CIRCUIT_ROUNDS = 3;
+const REST_DURATION = 60;       // repos entre tours du circuit
+const COOLDOWN_DURATION = 300;  // 5 min étirements
+
+/* Construit la séquence linéaire d'étapes. Chaque étape a :
+   { phase, roundLabel, exercise } */
+function buildSteps() {
+  const steps = [];
+
+  // Échauffement
+  for (let r = 1; r <= WARMUP_ROUNDS; r++) {
+    for (const ex of WARMUP_EXERCISES) {
+      steps.push({
+        phase: 'Échauffement',
+        roundLabel: `Tour ${r} / ${WARMUP_ROUNDS}`,
+        exercise: ex,
+      });
+    }
+  }
+
+  // Circuit principal + repos entre tours
+  for (let r = 1; r <= CIRCUIT_ROUNDS; r++) {
+    for (const ex of CIRCUIT_EXERCISES) {
+      steps.push({
+        phase: 'Circuit principal',
+        roundLabel: `Tour ${r} / ${CIRCUIT_ROUNDS}`,
+        exercise: ex,
+      });
+    }
+    if (r < CIRCUIT_ROUNDS) {
+      steps.push({
+        phase: 'Circuit principal',
+        roundLabel: `Repos avant tour ${r + 1}`,
+        exercise: { name: 'Repos', detail: `${REST_DURATION} secondes`, mode: 'time', duration: REST_DURATION, isRest: true },
+      });
+    }
+  }
+
+  // Retour au calme
+  steps.push({
+    phase: 'Retour au calme',
+    roundLabel: 'Étirements libres',
+    exercise: { name: 'Étirements', detail: '5 minutes', mode: 'time', duration: COOLDOWN_DURATION, isRest: true },
+  });
+
+  return steps;
+}
+
+/* ======================================================================
+   AUDIO — VOIX + BIPS
+   ====================================================================== */
+
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) { audioCtx = null; }
+  }
+  // iOS : parfois suspendu après création, il faut resume()
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+}
+
+function beep(frequency = 800, duration = 0.12, volume = 0.3) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = frequency;
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch (e) {}
+}
+
+function beepShort()  { beep(800, 0.12, 0.3); }   // 3, 2, 1
+function beepFinish() { beep(1200, 0.3, 0.4); }   // fin de timer
+
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    // iOS : annuler toute parole en cours évite les blocages
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR';
+    u.rate = 1.0;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ======================================================================
+   WAKE LOCK — garder l'écran allumé
+   ====================================================================== */
+
+let wakeLock = null;
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) {}
+}
+async function releaseWakeLock() {
+  if (wakeLock) {
+    try { await wakeLock.release(); } catch (e) {}
+    wakeLock = null;
+  }
+}
+// Re-request si l'onglet redevient visible
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.running && !state.paused) {
+    requestWakeLock();
+  }
+});
+
+/* ======================================================================
+   MOTEUR DE SEANCE
+   ====================================================================== */
+
+const state = {
+  steps: [],
+  index: 0,
+  running: false,
+  paused: false,
+  remaining: 0,       // secondes restantes pour l'étape en cours (mode time)
+  tickInterval: null, // setInterval du timer
+  lastCountdownSpoken: -1,
+};
+
+const el = {
+  home:          document.getElementById('home'),
+  session:       document.getElementById('session'),
+  end:           document.getElementById('end'),
+  startBtn:      document.getElementById('startBtn'),
+  phaseLabel:    document.getElementById('phaseLabel'),
+  roundInfo:     document.getElementById('roundInfo'),
+  exerciseArea:  document.getElementById('exerciseArea'),
+  exerciseName:  document.getElementById('exerciseName'),
+  exerciseDetail:document.getElementById('exerciseDetail'),
+  counter:       document.getElementById('counter'),
+  counterLabel:  document.getElementById('counterLabel'),
+  repsBtn:       document.getElementById('repsBtn'),
+  pauseBtn:      document.getElementById('pauseBtn'),
+  skipBtn:       document.getElementById('skipBtn'),
+  pauseOverlay:  document.getElementById('pauseOverlay'),
+  progressFill:  document.getElementById('progressFill'),
+  progressText:  document.getElementById('progressText'),
+  restartBtn:    document.getElementById('restartBtn'),
+};
+
+function showScreen(which) {
+  el.home.classList.toggle('active', which === 'home');
+  el.session.classList.toggle('active', which === 'session');
+  el.end.classList.toggle('active', which === 'end');
+}
+
+function startSession() {
+  // IMPORTANT : ces deux appels doivent être dans le handler du tap (iOS)
+  initAudio();
+  // "Amorce" la synthèse vocale sur iOS en parlant immédiatement
+  speak('C\'est parti !');
+
+  state.steps = buildSteps();
+  state.index = 0;
+  state.running = true;
+  state.paused = false;
+
+  requestWakeLock();
+  showScreen('session');
+  enterStep();
+}
+
+function enterStep() {
+  const step = state.steps[state.index];
+  if (!step) { finishSession(); return; }
+
+  // Mise à jour UI : phase, tour, exo
+  el.phaseLabel.textContent = step.phase;
+  el.roundInfo.textContent = step.roundLabel;
+  el.exerciseName.textContent = step.exercise.name;
+  el.exerciseDetail.textContent = step.exercise.detail;
+
+  // Progression
+  const progress = ((state.index) / state.steps.length) * 100;
+  el.progressFill.style.width = progress + '%';
+  el.progressText.textContent = `Étape ${state.index + 1} / ${state.steps.length}`;
+
+  // Couleur du compteur selon le type
+  el.counter.classList.remove('warning', 'rest', 'pulse');
+  if (step.exercise.isRest) el.counter.classList.add('rest');
+
+  // Annonce vocale
+  if (step.exercise.isRest) {
+    if (step.exercise.name === 'Étirements') {
+      speak('Retour au calme. Étirements libres, 5 minutes.');
+    } else {
+      speak(`Repos, ${step.exercise.duration} secondes.`);
+    }
+  } else {
+    speak(`${step.exercise.name}. C'est parti !`);
+  }
+
+  // Mode temps vs reps
+  if (step.exercise.mode === 'time') {
+    setupTimeMode(step);
+  } else {
+    setupRepsMode(step);
+  }
+}
+
+function setupTimeMode(step) {
+  state.remaining = step.exercise.duration;
+  state.lastCountdownSpoken = -1;
+  el.counter.textContent = state.remaining;
+  el.counterLabel.textContent = 'Secondes';
+  el.counterLabel.style.display = 'block';
+  el.repsBtn.style.display = 'none';
+
+  clearInterval(state.tickInterval);
+  state.tickInterval = setInterval(tick, 1000);
+}
+
+function setupRepsMode(step) {
+  clearInterval(state.tickInterval);
+  state.tickInterval = null;
+  // En mode reps, le détail ("10 répétitions") est déjà affiché plus haut.
+  // Le gros "compteur" devient un check visuel ; l'action passe par le bouton.
+  el.counter.textContent = '✓';
+  el.counterLabel.style.display = 'none';
+  el.repsBtn.style.display = 'inline-block';
+}
+
+function tick() {
+  if (state.paused) return;
+  state.remaining--;
+
+  el.counter.textContent = Math.max(state.remaining, 0);
+
+  // Pulse visuelle
+  el.counter.classList.add('pulse');
+  setTimeout(() => el.counter.classList.remove('pulse'), 180);
+
+  // Alerte couleur dans les 3 dernières sec
+  if (state.remaining <= 3 && state.remaining > 0) {
+    el.counter.classList.remove('rest');
+    el.counter.classList.add('warning');
+  }
+
+  // Bip + voix sur 3, 2, 1
+  if (state.remaining === 3 || state.remaining === 2 || state.remaining === 1) {
+    if (state.lastCountdownSpoken !== state.remaining) {
+      beepShort();
+      speak(String(state.remaining));
+      state.lastCountdownSpoken = state.remaining;
+    }
+  }
+
+  if (state.remaining <= 0) {
+    clearInterval(state.tickInterval);
+    state.tickInterval = null;
+    beepFinish();
+    nextStep();
+  }
+}
+
+function nextStep() {
+  state.index++;
+  if (state.index >= state.steps.length) {
+    finishSession();
+  } else {
+    enterStep();
+  }
+}
+
+function finishSession() {
+  state.running = false;
+  clearInterval(state.tickInterval);
+  state.tickInterval = null;
+  releaseWakeLock();
+  speak('Séance terminée. Bravo !');
+  showScreen('end');
+}
+
+/* ======================================================================
+   PAUSE / REPRISE
+   ====================================================================== */
+
+function togglePause() {
+  if (!state.running) return;
+  state.paused = !state.paused;
+
+  if (state.paused) {
+    el.pauseOverlay.classList.add('active');
+    el.pauseBtn.textContent = 'Reprendre';
+    if ('speechSynthesis' in window) window.speechSynthesis.pause();
+  } else {
+    el.pauseOverlay.classList.remove('active');
+    el.pauseBtn.textContent = 'Pause';
+    if ('speechSynthesis' in window) window.speechSynthesis.resume();
+    // iOS : resume du wake lock s'il a été libéré
+    requestWakeLock();
+  }
+}
+
+/* ======================================================================
+   EVENEMENTS
+   ====================================================================== */
+
+el.startBtn.addEventListener('click', startSession);
+
+el.pauseBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  togglePause();
+});
+
+el.skipBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!state.running || state.paused) return;
+  clearInterval(state.tickInterval);
+  state.tickInterval = null;
+  nextStep();
+});
+
+el.repsBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!state.running || state.paused) return;
+  nextStep();
+});
+
+// Tap n'importe où sur la session = pause/reprise
+// (sauf si on tape sur un bouton, déjà géré par stopPropagation)
+el.session.addEventListener('click', () => {
+  if (state.running) togglePause();
+});
+// Tap sur l'overlay de pause = reprendre
+el.pauseOverlay.addEventListener('click', () => {
+  if (state.paused) togglePause();
+});
+
+el.restartBtn.addEventListener('click', () => {
+  showScreen('home');
+});
+
+/* ======================================================================
+   PWA — Service Worker minimal (Blob URL, pas de fichier séparé)
+   Chrome Android exige un SW enregistré pour proposer "Installer l'app".
+   Celui-ci ne fait rien d'utile côté cache — il répond juste "oui je suis là".
+   ====================================================================== */
+
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    self.addEventListener('install', (e) => self.skipWaiting());
+    self.addEventListener('activate', (e) => self.clients.claim());
+    self.addEventListener('fetch', (e) => {});
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  // L'enregistrement peut échouer en file:// — c'est normal, on ignore.
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+</script>
+</body>
+</html>
