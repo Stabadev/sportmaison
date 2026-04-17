@@ -8,11 +8,10 @@
 <meta name="theme-color" content="#0a0a0a">
 <title>Sport Maison</title>
 
-<!-- ===== PWA : manifest inline (data URL) ===== -->
-<link rel="manifest" href='data:application/manifest+json,{"name":"Sport Maison","short_name":"Sport","start_url":".","display":"standalone","orientation":"portrait","background_color":"%230a0a0a","theme_color":"%230a0a0a","icons":[{"src":"data:image/svg%2Bxml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 rx=%22110%22 fill=%22%230a0a0a%22/><text x=%2250%25%22 y=%2254%25%22 font-size=%22300%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>💪</text></svg>","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}'>
-
-<!-- Icône directe (pour favicon + secours Android) -->
-<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="%230a0a0a"/><text x="50%25" y="54%25" font-size="300" text-anchor="middle" dominant-baseline="middle">💪</text></svg>'>
+<!-- ===== PWA ===== -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   /* ---------- RESET ---------- */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -732,21 +731,15 @@ el.restartBtn.addEventListener('click', () => {
 });
 
 /* ======================================================================
-   PWA — Service Worker minimal (Blob URL, pas de fichier séparé)
-   Chrome Android exige un SW enregistré pour proposer "Installer l'app".
-   Celui-ci ne fait rien d'utile côté cache — il répond juste "oui je suis là".
+   PWA — Enregistrement du Service Worker
+   Requis pour que Chrome Android propose "Installer l'application"
+   en mode standalone (plein écran, sans barre de navigateur).
    ====================================================================== */
 
 if ('serviceWorker' in navigator) {
-  const swCode = `
-    self.addEventListener('install', (e) => self.skipWaiting());
-    self.addEventListener('activate', (e) => self.clients.claim());
-    self.addEventListener('fetch', (e) => {});
-  `;
-  const blob = new Blob([swCode], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(blob);
-  // L'enregistrement peut échouer en file:// — c'est normal, on ignore.
-  navigator.serviceWorker.register(swUrl).catch(() => {});
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
 }
 </script>
 </body>
